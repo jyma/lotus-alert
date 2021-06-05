@@ -25,7 +25,6 @@
 ### 2.1 Server酱使用
 - SendKey
 登陆使用Server酱获取`SendKey`，详细内容可以参考[Server酱文档](https://sct.ftqq.com/forward)。
-
 大致步骤为：
 ![avatar](https://github.com/filguard/lotus-alert/blob/main/images/serverj.png)
 - openid
