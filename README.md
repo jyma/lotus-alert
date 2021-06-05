@@ -26,7 +26,7 @@
 - SendKey
 登陆使用Server酱获取`SendKey`，详细内容可以参考[Server酱文档](https://sct.ftqq.com/forward)。
 大致步骤为：
-![avatar](https://github.com/filguard/lotus-alert/blob/main/images/serverj.png)
+![avatar](./images/serverj.png)
 - openid
 该参数用于配置Server酱推送到企业微信中的特定人或多个人，内容为接收人在企业微信中的 UID，填写多个人使用`|`隔开，不填则发送给通道配置页面的接收人。
 企业微信中某个成员的UID可以在该企业中的账号，直接在通讯录中查看成员即可获取该成员的「账号」（即该成员UID）
