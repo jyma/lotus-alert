@@ -17,13 +17,15 @@ from datetime import datetime
 import requests
 
 # Server酱SendKey「必填，填写为自己的SendKey」
-send_key = "SCT42628GBgsr3AraKD0Hua6u9evwVfft"
+send_key = "SCT42628TJaSP3AraKD0Hua6Woxiaxiede"
 # 可配置Server酱推送到企业微信中特定人或多个人「选填，具体可参考文档」
-openid = "yingTaoxiaoWanzi|mje"
+openid = "yingtaoxiaowanzi|mje"
 # 脚本运行所在的机器类型
 # lotus（一）、Seal-Miner（二）、Wining-Miner（三）、WindowPost-Miner（四）
 # 现做出约定，直接填写一、二、三、四来表示对应的机器类型，可写入多个类型
 check_machine = "一二三四"
+# 需要进行服务器宕机/网络不可达检验的内网ip，以|号分割
+server_ip = "192.168.100.5|192.168.100.6|192.168.100.99"
 # 存储挂载路径「选填，在Seal-Miner、Wining-Miner、WindowPost-Miner上运行时需要填写，多个挂载目录使用'|'进行分隔」
 file_mount = "/fcfs"
 # WindowPost—Miner日志路径「选填，在WindowPost-Miner上运行时需要填写」
@@ -224,6 +226,27 @@ def balance_check():
             return False
     return True
 
+# 检查服务器是否可达（宕机或网络不通）
+def reachable_check():
+    try:
+        global server_ip
+        is_reachable = True
+        ips = server_ip.split('|')
+        print('reachable_check:')
+        for ip in ips:
+            print(ip)    
+            p = sp.Popen(["ping -c 1 -W 1 "+ ip],stdout=sp.PIPE,stderr=sp.PIPE,shell=True)
+            out=p.stdout.read()
+            regex=re.compile('100% packet loss')
+            if len(regex.findall(str(out))) != 0:
+                print("false")
+                server_post(str(ip),"服务器不可达（宕机/网络故障），请及时排查！")
+                is_reachable = False  
+        return is_reachable
+    except:
+        print('reachable_check error!')
+
+
 def loop():
     while True:
         try:
@@ -232,6 +255,8 @@ def loop():
             if not check_machine.strip():
                 print("请填写巡检的机器类型！")
                 break
+            if reachable_check():
+                print("各服务器均可达，无异常")
             if check_machine.find('一')>=0:
                 if lotusprocess_check():
                     if chain_check():
