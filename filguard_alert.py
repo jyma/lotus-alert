@@ -26,6 +26,8 @@ openid = "yingtaoxiaowanzi|mje"
 check_machine = "一二三四"
 # 需要进行服务器宕机/网络不可达检验的内网ip，以|号分割
 server_ip = "192.168.100.5|192.168.100.6|192.168.100.99"
+# ssh 登录授权IP地址,以|号分割，如果登录IP不在列表中，将发出告警消息。
+ssh_white_ip_list = "192.168.85.10|221.10.1.1"
 # 存储挂载路径「选填，在Seal-Miner、Wining-Miner、WindowPost-Miner上运行时需要填写，多个挂载目录使用'|'进行分隔」
 file_mount = "/fcfs"
 # WindowPost—Miner日志路径「选填，在WindowPost-Miner上运行时需要填写」
@@ -246,6 +248,30 @@ def reachable_check():
     except:
         print('reachable_check error!')
 
+# ssh 登录IP是否授权检查
+def ssh_login_ip_check():
+    try:
+        global ssh_white_ip_list
+        print("ssh logined ip check:\n")
+        hostname = sp.getoutput("hostname")
+        #获取已登录用户IP地址列表
+        out = sp.getoutput("who |grep -v tmux |awk '{print $5}'")
+        out = out.replace("(","").replace(")","")
+        login_ip_list = out.split('\n')
+        #去除重复
+        login_ip_list = set(login_ip_list)
+        login_ip_list = list(login_ip_list)
+        #把ssh登录授权IP地址格式化成列表
+        ssh_white_ip_list = ssh_white_ip_list.split('|')
+        #检测已登录IP是否授权
+        for ip in login_ip_list:
+            if ip != "" and ip not in ssh_white_ip_list:
+                curtime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+                msg = "{0},未授权IP:{1},已登录服务器{2}".format(curtime, ip, hostname)
+                server_post(hostname,msg)
+        print("--------ssh logined ip check finished -------------")   
+    except Exception as e:
+        print(str(e))
 
 def loop():
     while True:
