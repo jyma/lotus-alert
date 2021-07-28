@@ -49,8 +49,8 @@ Wining日志路径，该参数用于填写WiningPost-Miner日志路径，在Wini
 最长时间任务告警，如设置10，那么Seal-Mienr执行`lotus-miner sealing jobs`中最长的时间超过10小时就会告警。
 - default_wallet_balance  
 Default钱包余额告警阈值，如设置50，那么当Default钱包余额低于50时就会告警。
-- block_count  
-爆块数量，脚本中为初始赋值，无须进行改动
+- check_interval 
+程序检测间隔时间，默认300秒，可根据需要自行修改，建议不要小于180秒
 ## 3. 脚本使用及运行
 该脚本使用python编写，在修改参数后在对应的机器上使用`python3 filguard_alert.py`运行即可，后台运行脚本使用命令：
 `nohup python3 filguard_alert.py > alert.log 2>&1 &`  
