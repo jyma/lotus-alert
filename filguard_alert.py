@@ -34,14 +34,14 @@ file_mount = "/fcfs"
 wdpost_log_path = "/home/filguard/miner.log"
 # WiningPost-Miner日志路径「选填，在Wining-Miner上运行时需要填写」
 winingpost_log_path = "/home/filguard/miner.log"
-# 节点号「选填」
+# fil_account 为你的Miner节点号「必填，用于爆块检测」
 fil_account = "f099（黑洞）"
 # 最长时间任务告警，如设置10，那么sealing jobs中最长的时间超过10小时就会告警「选填」
 job_time_alert = 10
 # Default钱包余额告警阈值「选填，默认50」
 default_wallet_balance = 50
-#初始爆块数量常量「无需改动」
-block_count = 0
+# check_interval 程序循环检查间隔默认300秒
+check_interval = 300
 
 
 def print(s, end='\n', file=sys.stdout):
@@ -187,14 +187,14 @@ def wdpost_log_check():
 
 # WiningPost—Miner爆块检查
 def mined_block_check():
-    global block_count
-    out = sp.getoutput("cat "+ winingpost_log_path +" | grep 'mined new block' | wc -l")
+    mined_block_cmd = "lotus chain list --count {0} |grep {1} |wc -l".format(int(check_interval/30), fil_account)
+    out = sp.getoutput(mined_block_cmd)
     print('mined_block_check:')
     print(out)
-    if int(out)>block_count:
-        block_count=int(out)
+    block_count=int(out)
+    if block_count > 0:
         print("true")
-        server_post("又爆块啦～","大吉大利，今晚吃鸡")
+        server_post("{0}又爆了{1}个块".format(fil_account, block_count),"大吉大利，今晚吃鸡")
         return True
     return False
 
@@ -308,8 +308,8 @@ def loop():
                     print(time.asctime(time.localtime(time.time())))    
                     print("WindowPost-Miner已巡检完毕，无异常") 
             # sleep
-            print("sleep 300 seconds\n")
-            time.sleep(300)
+            print("sleep {0} seconds\n".format(check_interval))
+            time.sleep(check_interval)
         except KeyboardInterrupt:
             exit(0)
         except:
