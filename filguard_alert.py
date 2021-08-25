@@ -24,24 +24,30 @@ openid = "yingtaoxiaowanzi|mje"
 # lotus（一）、Seal-Miner（二）、Wining-Miner（三）、WindowPost-Miner（四）
 # 现做出约定，直接填写一、二、三、四来表示对应的机器类型，可写入多个类型
 check_machine = "一二三四"
+# 机器别名，告警信息中进行展示，可以快速定位是哪台机器发出的告警信息
+machine_name = "lotus_pub"
 # 需要进行服务器宕机/网络不可达检验的内网ip，以|号分割
 server_ip = "192.168.100.5|192.168.100.6|192.168.100.99"
-# ssh 登录授权IP地址,以|号分割，如果登录IP不在列表中，将发出告警消息。
-ssh_white_ip_list = "192.168.85.10|221.10.1.1"
-# 存储挂载路径「选填，在Seal-Miner、Wining-Miner、WindowPost-Miner上运行时需要填写，多个挂载目录使用'|'进行分隔」
+# 存储挂载路径及磁盘剩余空间监测，填写需要监测的磁盘挂载目录，若为根目录挂载可以直接填写`\`，多个挂载目录使用`|`进行分隔
 file_mount = "/fcfs"
+# 剩余磁盘空间监测，默认是单位是G，监测的目录为`file_mount`中填写的路径
+disk_avail_alert = 200
 # WindowPost—Miner日志路径「选填，在WindowPost-Miner上运行时需要填写」
 wdpost_log_path = "/home/filguard/miner.log"
 # WiningPost-Miner日志路径「选填，在Wining-Miner上运行时需要填写」
 winingpost_log_path = "/home/filguard/miner.log"
 # fil_account 为你的Miner节点号「必填，用于爆块检测」
 fil_account = "f099（黑洞）"
-# 最长时间任务告警，如设置10，那么sealing jobs中最长的时间超过10小时就会告警「选填」
-job_time_alert = 10
+# 最长时间任务告警，p1默认是小时，p2默认是分钟，c默认是分钟，「选填」
+p1_job_time_alert = 5
+p2_job_time_alert = 40
+c2_job_time_alert = 25
 # Default钱包余额告警阈值「选填，默认50」
 default_wallet_balance = 50
 # check_interval 程序循环检查间隔默认300秒
 check_interval = 300
+# ssh 登录授权IP地址,以|号分割，如果登录IP不在列表中，将发出告警消息。
+ssh_white_ip_list = "192.168.85.10|221.10.1.1"
 
 
 def print(s, end='\n', file=sys.stdout):
@@ -63,13 +69,14 @@ def is_number(s):
         pass
     return False
 
-def server_post(title='默认标题',content='默认正文'):
+def server_post(content='默认正文'):
     global send_key
     global fil_account
     global openid
+    global machine_name
     api = "https://sctapi.ftqq.com/" + send_key + ".send"
     data = {
-        "text":(fil_account+":"+title),
+        "text":(fil_account+":"+machine_name),
         "desp":content,
         "openid":openid
     }
@@ -77,7 +84,7 @@ def server_post(title='默认标题',content='默认正文'):
         req = requests.post(api,data = data)
         req_json = json.loads(req.text)
         if req_json.get("data").get("errno") == 0:
-            print("server message sent successfully: " + title + " | " + content)
+            print("server message sent successfully: " + machine_name + " | " + content)
             return True
         else:
             print("server message sent failed: " + req.text)
@@ -109,31 +116,31 @@ def chain_check():
         if  out.endswith('Done!'):
             print("true")
             return True
-        server_post("节点同步出错","请及时排查！")
+        server_post("节点同步出错，请及时排查！")
         return False
     except Exception as e:
         print("Fail to send message: " + e)
     
 # 显卡驱动检查
-def nvidia_check(check_type=''):
+def nvidia_check():
     out = sp.getoutput("timeout 30s echo $(nvidia-smi | grep GeForce)")
     print('nvidia_check:')
     print(out)
     if out.find("GeForce")>=0:
         print("true")
         return True
-    server_post(check_type,"显卡驱动故障，请及时排查！")
+    server_post("显卡驱动故障，请及时排查！")
     return False
 
 # miner进程检查
-def minerprocess_check(check_type=''):
+def minerprocess_check():
     out = sp.getoutput("timeout 30s echo $(pidof lotus-miner)")
     print('minerprocess_check:')
     print(out)
     if out.strip():
         print("true")
         return True
-    server_post(check_type,"Miner进程丢失，请及时排查！")
+    server_post("Miner进程丢失，请及时排查！")
     return False
 
 # lotus进程检查
@@ -144,7 +151,7 @@ def lotusprocess_check():
     if out.strip():
         print("true")
         return True
-    server_post("Lotus","Lotus进程丢失，请及时排查！")
+    server_post("Lotus进程丢失，请及时排查！")
     print("false")
     return False
 
@@ -157,22 +164,27 @@ def mpool_check():
         if int(out)<=240:
             print("true")
             return True
-        server_post("Lotus","消息堵塞，请及时清理！") 
+        server_post("消息堵塞，请及时清理！") 
     return False
 
-# 存储文件挂载检查
+# 存储文件挂载检查，磁盘容量剩余检查
 def fm_check(check_type=''):
     global file_mount
+    is_fm_correct = True
     fs = file_mount.split('|')
     for str in fs:
-        out = sp.getoutput("timeout 30s echo $(df -h | grep "+ str +")")
+        out = sp.getoutput("timeout 30s echo $(df -hl | grep -w  "+ str + " | awk '{print $4}'"+ ")")
         print('fm_check:')
         print(out)
         if not out.strip():
             print("false")
-            server_post(check_type,"未发现存储挂载目录，请及时排查！")
-            return False
-    return True
+            server_post("未发现存储挂载目录，请及时排查！")
+            is_fm_correct = False
+        if out.find('G')>=0 and int(out[0:out.find('G')])<= disk_avail_alert :
+            print("false")
+            server_post("磁盘空间不足，请及时排查！")
+            is_fm_correct = False
+    return is_fm_correct
 
 # WindowPost—Miner日志报错检查
 def wdpost_log_check():
@@ -182,7 +194,7 @@ def wdpost_log_check():
     if not out.strip():
         print("true")
         return True
-    server_post("WindowPost","Wdpost报错，请及时处理！")
+    server_post("Wdpost报错，请及时处理！")
     return False
 
 # WiningPost—Miner爆块检查
@@ -194,24 +206,56 @@ def mined_block_check():
     block_count=int(out)
     if block_count > 0:
         print("true")
-        server_post("{0}又爆了{1}个块".format(fil_account, block_count),"大吉大利，今晚吃鸡")
+        server_post("{0}又爆了{1}个块".format(fil_account, block_count)+"，大吉大利，今晚吃鸡")
         return True
     return False
 
-# 任务超时检查
-def overtime_check():
-    global job_time_alert
-    out = sp.getoutput("lotus-miner sealing jobs | awk '{ print $7}' | head -n 2 | tail -n 1")
+# P1任务超时检查
+def p1_overtime_check():
+    global p1_job_time_alert
+    out = sp.getoutput("lotus-miner sealing jobs | grep -w PC1 | awk '{ print $7}' | head -n 2 | tail -n 1")
     print('overtime_check:')
     print(out)
     if (out.find("Time")>=0) or (not out.find('h')>=0):
         print("time true")
         return True
-    if out.strip() and int(out[0:out.find('h')])<=job_time_alert:
+    if out.strip() and int(out[0:out.find('h')])<=p1_job_time_alert:
         print(out[0:out.find("h")])
         print("true")
         return True
-    server_post("SealMiner","封装任务超时，请及时处理！")
+    server_post("P1封装任务超时，请及时处理！")
+    return False
+
+# P2任务超时检查
+def p2_overtime_check():
+    global p2_job_time_alert
+    out = sp.getoutput("lotus-miner sealing jobs | grep -w PC2 | awk '{ print $7}' | head -n 2 | tail -n 1")
+    print('overtime_check:')
+    print(out)
+    if (out.find("Time")>=0) or (not out.find('m')>=0):
+        print("time true")
+        return True
+    if out.strip() and int(out[0:out.find('m')])<=p2_job_time_alert:
+        print(out[0:out.find("m")])
+        print("true")
+        return True
+    server_post("P2封装任务超时，请及时处理！")
+    return False
+
+# C2任务超时检查
+def p2_overtime_check():
+    global c2_job_time_alert
+    out = sp.getoutput("lotus-miner sealing jobs | grep -w C2 | awk '{ print $7}' | head -n 2 | tail -n 1")
+    print('overtime_check:')
+    print(out)
+    if (out.find("Time")>=0) or (not out.find('m')>=0):
+        print("time true")
+        return True
+    if out.strip() and int(out[0:out.find('m')])<=c2_job_time_alert:
+        print(out[0:out.find("m")])
+        print("true")
+        return True
+    server_post("C2封装任务超时，请及时处理！")
     return False
 
 # Default钱包余额预警
@@ -224,7 +268,7 @@ def balance_check():
     if is_number(balance[0]):
         if float(balance[0])<default_wallet_balance:
             print("false")
-            server_post("Lotus","钱包余额不足，请及时充值！")
+            server_post("钱包余额不足，请及时充值！")
             return False
     return True
 
@@ -242,7 +286,7 @@ def reachable_check():
             regex=re.compile('100% packet loss')
             if len(regex.findall(str(out))) != 0:
                 print("false")
-                server_post(str(ip),"服务器不可达（宕机/网络故障），请及时排查！")
+                server_post(str(ip)+"，服务器不可达（宕机/网络故障），请及时排查！")
                 is_reachable = False  
         return is_reachable
     except:
@@ -268,7 +312,7 @@ def ssh_login_ip_check():
             if ip != "" and ip not in ssh_white_ip_list:
                 curtime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
                 msg = "{0},未授权IP:{1},已登录服务器{2}".format(curtime, ip, hostname)
-                server_post(hostname,msg)
+                server_post(hostname+msg)
         print("--------ssh logined ip check finished -------------")   
     except Exception as e:
         print(str(e))
@@ -283,6 +327,8 @@ def loop():
                 break
             if reachable_check():
                 print("各服务器均可达，无异常")
+            if fm_check():
+                print("目录挂载、磁盘空间充足，无异常")
             if check_machine.find('一')>=0:
                 if lotusprocess_check():
                     if chain_check():
@@ -292,18 +338,18 @@ def loop():
                             print(time.asctime(time.localtime(time.time())))
                             print("Lotus已巡检完毕，无异常")
             if check_machine.find('二')>=0:
-                if minerprocess_check("SealMiner") and fm_check("SealMiner") and overtime_check():
+                if minerprocess_check() and p1_overtime_check() and p2_overtime_check() and c2_overtime_check():
                     print("---------------------")
                     print(time.asctime(time.localtime(time.time())))
                     print("Seal-Miner已巡检完毕，无异常")   
             if check_machine.find('三')>=0:
                 mined_block_check()
-                if nvidia_check("WiningMiner") and minerprocess_check("WiningMiner") and fm_check("WiningMiner"):
+                if nvidia_check() and minerprocess_check() :
                     print("---------------------")
                     print(time.asctime(time.localtime(time.time())))
                     print("WiningPost-Miner已巡检完毕，无异常")                
             if check_machine.find('四')>=0:
-                if nvidia_check("WindowPostMiner") and minerprocess_check("WindowPostMiner") and fm_check("WindowPostMiner") and wdpost_log_check():
+                if nvidia_check() and minerprocess_check() and wdpost_log_check():
                     print("---------------------")
                     print(time.asctime(time.localtime(time.time())))    
                     print("WindowPost-Miner已巡检完毕，无异常") 
