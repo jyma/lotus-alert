@@ -337,22 +337,26 @@ def loop():
                             print("---------------------")
                             print(time.asctime(time.localtime(time.time())))
                             print("Lotus已巡检完毕，无异常")
+            time.sleep(3)
             if check_machine.find('二')>=0:
                 if minerprocess_check() and p1_overtime_check() and p2_overtime_check() and c2_overtime_check():
                     print("---------------------")
                     print(time.asctime(time.localtime(time.time())))
-                    print("Seal-Miner已巡检完毕，无异常")   
+                    print("Seal-Miner已巡检完毕，无异常") 
+            time.sleep(3)  
             if check_machine.find('三')>=0:
                 mined_block_check()
                 if nvidia_check() and minerprocess_check() :
                     print("---------------------")
                     print(time.asctime(time.localtime(time.time())))
-                    print("WiningPost-Miner已巡检完毕，无异常")                
+                    print("WiningPost-Miner已巡检完毕，无异常")   
+            time.sleep(3)             
             if check_machine.find('四')>=0:
                 if nvidia_check() and minerprocess_check() and wdpost_log_check():
                     print("---------------------")
                     print(time.asctime(time.localtime(time.time())))    
                     print("WindowPost-Miner已巡检完毕，无异常") 
+            time.sleep(3)
             # sleep
             print("sleep {0} seconds\n".format(check_interval))
             time.sleep(check_interval)
