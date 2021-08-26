@@ -213,7 +213,7 @@ def mined_block_check():
 # P1任务超时检查
 def p1_overtime_check():
     global p1_job_time_alert
-    out = sp.getoutput("lotus-miner sealing jobs | grep -w PC1 | awk '{ print $7}' | head -n 2 | tail -n 1")
+    out = sp.getoutput("lotus-miner sealing jobs | grep -w PC1 | awk '{ print $7}' | head -n 1 | tail -n 1")
     print('overtime_check:')
     print(out)
     if (out.find("Time")>=0) or (not out.find('h')>=0):
@@ -229,7 +229,7 @@ def p1_overtime_check():
 # P2任务超时检查
 def p2_overtime_check():
     global p2_job_time_alert
-    out = sp.getoutput("lotus-miner sealing jobs | grep -w PC2 | awk '{ print $7}' | head -n 2 | tail -n 1")
+    out = sp.getoutput("lotus-miner sealing jobs | grep -w PC2 | awk '{ print $7}' | head -n 1 | tail -n 1")
     print('overtime_check:')
     print(out)
     if (out.find("Time")>=0) or (not out.find('m')>=0):
@@ -245,7 +245,7 @@ def p2_overtime_check():
 # C2任务超时检查
 def c2_overtime_check():
     global c2_job_time_alert
-    out = sp.getoutput("lotus-miner sealing jobs | grep -w C2 | awk '{ print $7}' | head -n 2 | tail -n 1")
+    out = sp.getoutput("lotus-miner sealing jobs | grep -w C2 | awk '{ print $7}' | head -n 1 | tail -n 1")
     print('overtime_check:')
     print(out)
     if (out.find("Time")>=0) or (not out.find('m')>=0):
