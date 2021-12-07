@@ -28,7 +28,7 @@ check_machine = "一二三四"
 machine_name = "lotus_pub"
 # 需要进行服务器宕机/网络不可达检验的内网ip，以|号分割
 server_ip = "192.168.100.5|192.168.100.6|192.168.100.99"
-# 存储挂载路径及磁盘剩余空间监测，填写需要监测的磁盘挂载目录，若为根目录挂载可以直接填写`\`，多个挂载目录使用`|`进行分隔
+# 存储挂载路径及磁盘剩余空间监测，填写需要监测的磁盘挂载目录，若为根目录挂载可以直接填写`/`，多个挂载目录使用`|`进行分隔
 file_mount = "/fcfs"
 # 剩余磁盘空间监测，默认是单位是G，监测的目录为`file_mount`中填写的路径
 disk_avail_alert = 200
@@ -317,6 +317,19 @@ def ssh_login_ip_check():
     except Exception as e:
         print(str(e))
 
+# 扇区证明出错检查
+def sectors_fault_check():
+    sectors_fault_cmd = "lotus-miner proving faults|wc -l"
+    out = sp.getoutput(sectors_fault_cmd)
+    print('sectors_fault_check:')
+    print(out)
+    sectors_count=int(out)
+    if sectors_count > 2:
+        print("true")
+        server_post("{0}节点出错{1}个扇区".format(fil_account, sectors_count-2)+"，请及时处理")
+        return True
+    return False
+
 def loop():
     while True:
         try:
@@ -352,7 +365,7 @@ def loop():
                     print("WiningPost-Miner已巡检完毕，无异常")   
             time.sleep(3)             
             if check_machine.find('四')>=0:
-                if nvidia_check() and minerprocess_check() and wdpost_log_check():
+                if nvidia_check() and minerprocess_check() and wdpost_log_check() and sectors_fault_check():
                     print("---------------------")
                     print(time.asctime(time.localtime(time.time())))    
                     print("WindowPost-Miner已巡检完毕，无异常") 
