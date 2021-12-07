@@ -327,8 +327,8 @@ def sectors_fault_check():
     if sectors_count > 2:
         print("true")
         server_post("{0}节点出错{1}个扇区".format(fil_account, sectors_count-2)+"，请及时处理")
-        return True
-    return False
+        return False
+    return True
 
 def loop():
     while True:
