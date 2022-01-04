@@ -28,6 +28,8 @@ check_machine = "一二三四"
 machine_name = "lotus_pub"
 # 需要进行服务器宕机/网络不可达检验的内网ip，以|号分割
 server_ip = "192.168.100.5|192.168.100.6|192.168.100.99"
+# 需要进行网络不可达检验的公网ip及端口号，多个以|号分割
+net_ip = "221.10.205.199:9227"
 # 存储挂载路径及磁盘剩余空间监测，填写需要监测的磁盘挂载目录，若为根目录挂载可以直接填写`/`，多个挂载目录使用`|`进行分隔
 file_mount = "/fcfs"
 # 剩余磁盘空间监测，默认是单位是G，监测的目录为`file_mount`中填写的路径
@@ -272,7 +274,7 @@ def balance_check():
             return False
     return True
 
-# 检查服务器是否可达（宕机或网络不通）
+# 检查内网服务器是否可达（宕机或网络不通）
 def reachable_check():
     try:
         global server_ip
@@ -287,7 +289,8 @@ def reachable_check():
             if len(regex.findall(str(out))) != 0:
                 print("false")
                 server_post(str(ip)+"，服务器不可达（宕机/网络故障），请及时排查！")
-                is_reachable = False  
+                is_reachable = False 
+            time.sleep(1) 
         return is_reachable
     except:
         print('reachable_check error!')
@@ -329,6 +332,24 @@ def sectors_fault_check():
         server_post("{0}节点出错{1}个扇区".format(fil_account, sectors_count-2)+"，请及时处理")
         return False
     return True
+
+# 检查公网服务器是否可达
+def net_check(check_type=''):
+    global net_ip
+    is_ip_reach = True
+    ips = net_ip.split('|')
+    for str in ips:
+        out = sp.getoutput("timeout 5s curl "+ str)
+        print('net_check:')
+        print(out)
+        if out.find('allowed')>=0 :
+            print("true")
+        else:
+            print("false")
+            server_post(str+"不可达，请及时排查！")
+            is_ip_reach = False
+        time.sleep(1)
+    return is_ip_reach
 
 def loop():
     while True:
