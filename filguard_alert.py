@@ -29,7 +29,7 @@ machine_name = "lotus_pub"
 # 需要进行服务器宕机/网络不可达检验的内网ip，以|号分割
 server_ip = "192.168.100.5|192.168.100.6|192.168.100.99"
 # 需要进行网络不可达检验的公网ip及端口号，多个以|号分割
-net_ip = "221.10.205.199:9227"
+net_ip = "221.10.205.199 9227"
 # 存储挂载路径及磁盘剩余空间监测，填写需要监测的磁盘挂载目录，若为根目录挂载可以直接填写`/`，多个挂载目录使用`|`进行分隔
 file_mount = "/fcfs"
 # 剩余磁盘空间监测，默认是单位是G，监测的目录为`file_mount`中填写的路径
@@ -339,10 +339,10 @@ def net_check(check_type=''):
     is_ip_reach = True
     ips = net_ip.split('|')
     for str in ips:
-        out = sp.getoutput("timeout 5s curl "+ str)
+        out = sp.getoutput("timeout 5s telnet "+ str)
         print('net_check:')
         print(out)
-        if out.find('allowed')>=0 :
+        if out.find('Escape')>=0 :
             print("true")
         else:
             print("false")
