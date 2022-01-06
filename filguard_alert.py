@@ -361,6 +361,8 @@ def loop():
                 break
             if reachable_check():
                 print("各服务器均可达，无异常")
+            if net_check():
+                print("各公网均可达，无异常")
             if fm_check():
                 print("目录挂载、磁盘空间充足，无异常")
             if check_machine.find('一')>=0:
