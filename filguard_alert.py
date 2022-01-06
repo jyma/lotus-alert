@@ -339,10 +339,10 @@ def net_check(check_type=''):
     is_ip_reach = True
     ips = net_ip.split('|')
     for str in ips:
-        out = sp.getoutput("timeout 5s telnet "+ str)
+        out = sp.getoutput("timeout 5s nc -zv "+ str)
         print('net_check:')
         print(out)
-        if out.find('Escape')>=0 :
+        if out.find('succeeded')>=0 :
             print("true")
         else:
             print("false")
