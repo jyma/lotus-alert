@@ -52,6 +52,6 @@ Default钱包余额告警阈值，如设置50，那么当Default钱包余额低�
 - check_interval 
 程序检测间隔时间，默认300秒，可根据需要自行修改，建议不要小于180秒
 ## 3. 脚本使用及运行
-该脚本使用python编写，在修改参数后在对应的机器上使用`python3 filguard_alert.py`运行即可，后台运行脚本使用命令：
-`nohup python3 filguard_alert.py > alert.log 2>&1 &`  
+该脚本使用python编写，在修改参数后在对应的机器上使用`python3 lotus_alert.py`运行即可，后台运行脚本使用命令：
+`nohup python3 lotus_alert.py > alert.log 2>&1 &`  
 执行成功后可以通过日志内容查看脚本运行情况，当出现`已巡检完毕，无异常 sleep 300 seconds`表示脚本已经正常运行。
