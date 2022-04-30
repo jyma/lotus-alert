@@ -136,6 +136,7 @@ def nvidia_check():
 
 # miner进程检查
 def minerprocess_check():
+    time.sleep(5)
     out = sp.getoutput("timeout 30s echo $(pidof lotus-miner)")
     print('minerprocess_check:')
     print(out)
@@ -175,7 +176,7 @@ def fm_check(check_type=''):
     is_fm_correct = True
     fs = file_mount.split('|')
     for str in fs:
-        out = sp.getoutput("timeout 30s echo $(df -hl | grep -w  "+ str + " | awk '{print $4}'"+ ")")
+        out = sp.getoutput("timeout 30s echo $(df -h | grep -w  "+ str + " | awk '{print $4}'"+ ")")
         print('fm_check:')
         print(out)
         if not out.strip():
