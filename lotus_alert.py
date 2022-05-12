@@ -235,13 +235,14 @@ def p2_overtime_check():
     out = sp.getoutput("lotus-miner sealing jobs | grep -w PC2 | awk '{ print $7}' | head -n 1 | tail -n 1")
     print('overtime_check:')
     print(out)
-    if (out.find("Time")>=0) or (not out.find('m')>=0):
-        print("time true")
-        return True
-    if out.strip() and int(out[0:out.find('m')])<=p2_job_time_alert:
-        print(out[0:out.find("m")])
-        print("true")
-        return True
+    if (not out.find('h')>=0):
+        if (out.find("Time")>=0) or (not out.find('m')>=0):
+            print("time true")
+            return True
+        if out.strip() and int(out[0:out.find('m')])<=p2_job_time_alert:
+            print(out[0:out.find("m")])
+            print("true")
+            return True
     server_post("P2封装任务超时，请及时处理！")
     return False
 
@@ -251,13 +252,14 @@ def c2_overtime_check():
     out = sp.getoutput("lotus-miner sealing jobs | grep -w C2 | awk '{ print $7}' | head -n 1 | tail -n 1")
     print('overtime_check:')
     print(out)
-    if (out.find("Time")>=0) or (not out.find('m')>=0):
-        print("time true")
-        return True
-    if out.strip() and int(out[0:out.find('m')])<=c2_job_time_alert:
-        print(out[0:out.find("m")])
-        print("true")
-        return True
+    if (not out.find('h')>=0):
+        if (out.find("Time")>=0) or (not out.find('m')>=0):
+            print("time true")
+            return True
+        if out.strip() and int(out[0:out.find('m')])<=c2_job_time_alert:
+            print(out[0:out.find("m")])
+            print("true")
+            return True
     server_post("C2封装任务超时，请及时处理！")
     return False
 
