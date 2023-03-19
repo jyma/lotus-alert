@@ -21,7 +21,7 @@ send_key = "SCT42628TJaSP3AraKD0Hua6Woxiaxiede"
 # 可配置Server酱推送到企业微信中特定人或多个人「选填，具体可参考文档」
 openid = "yingtaoxiaowanzi|mje"
 # 脚本运行所在的机器类型
-# lotus（一）、Seal-Miner（二）、Wining-Miner（三）、WindowPost-Miner（四）
+# lotus（一）、Seal-Miner（二）、Wining-Miner（三）、WindowPost-Miner（四）、存储机（五）
 # 现做出约定，直接填写一、二、三、四来表示对应的机器类型，可写入多个类型
 check_machine = "一二三四"
 # 机器别名，告警信息中进行展示，可以快速定位是哪台机器发出的告警信息
@@ -336,6 +336,30 @@ def sectors_fault_check():
         return False
     return True
 
+# 阵列卡故障盘检测
+def raid_offline_check():
+    out = sp.getoutput("sudo  MegaCli64 -PDList -aALL|grep 'Firmware state'|grep Offline")
+    print('raid_offline_check:')
+    print(out)
+    if not out.strip():
+        print("true")
+        return True
+    server_post("阵列卡出现故障盘，请及时处理！")
+    return False
+
+# 阵列卡磁盘坏道检测
+def raid_error_check():
+    out = sp.getoutput("sudo MegaCli64 -PDList -aALL|grep Error|awk '{print $4}'")
+    print('raid_error_check:')
+    res = str(out).split()
+    #print(out)
+    print(str(res))
+    for array in res :
+        if int(array) > 0 :
+            server_post("阵列卡出现故障盘，请及时处理！")
+            return False
+    return True
+
 # 检查公网服务器是否可达
 def net_check(check_type=''):
     global net_ip
@@ -395,6 +419,12 @@ def loop():
                     print("---------------------")
                     print(time.asctime(time.localtime(time.time())))    
                     print("WindowPost-Miner已巡检完毕，无异常") 
+            time.sleep(3)
+            if check_machine.find('五')>=0:
+                if raid_offline_check() and raid_error_check() :
+                    print("---------------------")
+                    print(time.asctime(time.localtime(time.time())))    
+                    print("存储机已巡检完毕，无异常") 
             time.sleep(3)
             # sleep
             print("sleep {0} seconds\n".format(check_interval))
