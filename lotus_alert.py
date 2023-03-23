@@ -356,7 +356,7 @@ def raid_error_check():
     print(str(res))
     for array in res :
         if int(array) > 0 :
-            server_post("阵列卡出现故障盘，请及时处理！")
+            server_post("磁盘出现坏道，请注意！")
             return False
     return True
 
