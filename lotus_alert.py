@@ -32,6 +32,8 @@ server_ip = "192.168.100.5|192.168.100.6|192.168.100.99"
 net_ip = "221.10.205.199 9227"
 # 存储挂载路径及磁盘剩余空间监测，填写需要监测的磁盘挂载目录，若为根目录挂载可以直接填写`/`，多个挂载目录使用`|`进行分隔
 file_mount = "/fcfs"
+# 阵列卡磁盘个数
+raid_disk_num = 36
 # 剩余磁盘空间监测，默认是单位是G，监测的目录为`file_mount`中填写的路径
 disk_avail_alert = 200
 # WindowPost—Miner日志路径「选填，在WindowPost-Miner上运行时需要填写」
@@ -338,14 +340,27 @@ def sectors_fault_check():
 
 # 阵列卡故障盘检测
 def raid_offline_check():
-    out = sp.getoutput("sudo  MegaCli64 -PDList -aALL|grep 'Firmware state'|grep Offline")
+    out = sp.getoutput("sudo  MegaCli64 -PDList -aALL|grep -c 'Firmware state'")
     print('raid_offline_check:')
     print(out)
-    if not out.strip():
-        print("true")
-        return True
-    server_post("阵列卡出现故障盘，请及时处理！")
-    return False
+    if is_number(out):
+        if int(out)<raid_disk_num:
+            print("false")
+            server_post("阵列卡磁盘出现丢失，请及时处理！")
+            return False     
+    return True
+
+# 阵列卡预警盘检测
+def raid_critical_check():
+    out = sp.getoutput("sudo MegaCli64 -AdpAllInfo -aALL | grep 'Critical Disks' | awk '{print $4}'")
+    print('raid_critical_check:')
+    print(out)
+    if is_number(out):
+        if int(out)>0:
+            print("false")
+            server_post("阵列卡出现预警盘，请注意！")
+            return False     
+    return True
 
 # 阵列卡磁盘坏道检测
 def raid_error_check():
@@ -355,10 +370,21 @@ def raid_error_check():
     #print(out)
     print(str(res))
     for array in res :
-        if int(array) > 0 :
+        if int(array) > 10 :
             server_post("磁盘出现坏道，请注意！")
             return False
     return True
+
+# 阵列卡磁盘故障/bad检测
+def raid_failed_check():
+    out = sp.getoutput("sudo  MegaCli64 -PDList -aALL|grep  state|grep -E 'Failed|bad'")
+    print('raid_failed_check:')
+    print(out)
+    if not out.strip():
+        print("true")
+        return True
+    server_post("阵列卡出现故障盘，请及时处理！")
+    return False
 
 # 检查公网服务器是否可达
 def net_check(check_type=''):
@@ -421,7 +447,7 @@ def loop():
                     print("WindowPost-Miner已巡检完毕，无异常") 
             time.sleep(3)
             if check_machine.find('五')>=0:
-                if raid_offline_check() and raid_error_check() :
+                if raid_offline_check() and raid_error_check() and raid_critical_check() and raid_failed_check():
                     print("---------------------")
                     print(time.asctime(time.localtime(time.time())))    
                     print("存储机已巡检完毕，无异常") 
