@@ -178,7 +178,7 @@ def fm_check(check_type=''):
     is_fm_correct = True
     fs = file_mount.split('|')
     for str in fs:
-        out = sp.getoutput("timeout 30s echo $(df -h | grep -w  "+ str + " | awk '{print $4}'"+ ")")
+        out = sp.getoutput("timeout 30s echo $(df -h |awk '{print $6,$4}'|grep -w "+ str + " |awk '{print $2}'"+ ")")
         print('fm_check:')
         print(out)
         if not out.strip():
