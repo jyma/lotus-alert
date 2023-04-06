@@ -91,11 +91,13 @@ def server_post(content='默认正文'):
             print("server message sent successfully: " + machine_name + " | " + content)
             return True
         else:
-            print("server message sent failed: " + req.text)
+            #print("server message sent failed: " + req.text)
             return False
     except requests.exceptions.RequestException as req_error:
+        return False
         print("Request error: "+req_error)
     except Exception as e:
+        return False
         print("Fail to send message: " + e)
 
 def init_check():
@@ -395,12 +397,12 @@ def net_check(check_type=''):
         out = sp.getoutput("timeout 5s nc -zv "+ str)
         print('net_check:')
         print(out)
-        if out.find('succeeded')>=0 :
+        if out.strip() and out.find('succeeded')>=0 :
             print("true")
-        else:
-            print("false")
-            server_post(str+"不可达，请及时排查！")
-            is_ip_reach = False
+            continue
+        print("false")
+        server_post(str+"不可达，请及时排查！")
+        is_ip_reach = False
         time.sleep(1)
     return is_ip_reach
 
