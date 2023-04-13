@@ -13,7 +13,7 @@ import re
 import sys
 import traceback
 import subprocess as sp
-from datetime import datetime
+from datetime import datetime,timedelta
 import requests
 
 # Server酱SendKey「必填，填写为自己的SendKey」
@@ -37,17 +37,17 @@ raid_disk_num = 36
 # 剩余磁盘空间监测，默认是单位是G，监测的目录为`file_mount`中填写的路径
 disk_avail_alert = 200
 # WindowPost—Miner日志路径「选填，在WindowPost-Miner上运行时需要填写」
-wdpost_log_path = "/home/filguard/miner.log"
+wdpost_log_path = "/home/fil/miner.log"
 # WiningPost-Miner日志路径「选填，在Wining-Miner上运行时需要填写」
-winingpost_log_path = "/home/filguard/miner.log"
+winingpost_log_path = "/home/fil/miner.log"
 # fil_account 为你的Miner节点号「必填，用于爆块检测」
 fil_account = "f099（黑洞）"
 # 最长时间任务告警，p1默认是小时，p2默认是分钟，c默认是分钟，「选填」
 p1_job_time_alert = 5
 p2_job_time_alert = 40
 c2_job_time_alert = 25
-# Default钱包余额告警阈值「选填，默认50」
-default_wallet_balance = 50
+# Default钱包余额告警阈值「选填，默认20」
+default_wallet_balance = 20
 # check_interval 程序循环检查间隔默认300秒
 check_interval = 300
 # ssh 登录授权IP地址,以|号分割，如果登录IP不在列表中，将发出告警消息。
@@ -73,14 +73,31 @@ def is_number(s):
         pass
     return False
 
-def server_post(content='默认正文'):
+def is_valid_date(strdate):
+	try:
+		time.strptime(strdate, "%a %b %d %H:%M:%S %Y")
+		return True
+	except:
+		return False
+
+def today_anytime_tsp(hour):
+    minute=0
+    second=0
+    now = datetime.now()
+    today_0 = now - timedelta(hours=now.hour, minutes=now.minute, seconds=now.second)
+    today_anytime = today_0 + timedelta(hours=hour, minutes=minute, seconds=second)
+    tsp = today_anytime.timestamp()
+    return tsp
+
+def server_post(title='',content='默认正文'):
     global send_key
     global fil_account
     global openid
-    global machine_name
+    global daily_summary
     api = "https://sctapi.ftqq.com/" + send_key + ".send"
+    title = fil_account+":"+title
     data = {
-        "text":(fil_account+":"+machine_name),
+        "text": title,
         "desp":content,
         "openid":openid
     }
@@ -100,18 +117,6 @@ def server_post(content='默认正文'):
         return False
         print("Fail to send message: " + e)
 
-def init_check():
-    try:
-        #初始化目前日志中的爆块数量
-        if check_machine.find('三')>=0:
-            global block_count
-            out = sp.getoutput("cat "+ winingpost_log_path +" | grep 'mined new block' | wc -l")
-            block_count = int(out)
-    except KeyboardInterrupt:
-        exit(0)
-    except:
-        traceback.print_exc()
-        time.sleep(10)
         
 # 高度同步检查
 def chain_check():
@@ -122,7 +127,7 @@ def chain_check():
         if  out.endswith('Done!'):
             print("true")
             return True
-        server_post("节点同步出错，请及时排查！")
+        server_post(machine_name,"节点同步出错，请及时排查！")
         return False
     except Exception as e:
         print("Fail to send message: " + e)
@@ -135,7 +140,7 @@ def nvidia_check():
     if out.find("GeForce")>=0:
         print("true")
         return True
-    server_post("显卡驱动故障，请及时排查！")
+    server_post(machine_name,"显卡驱动故障，请及时排查！")
     return False
 
 # miner进程检查
@@ -147,7 +152,7 @@ def minerprocess_check():
     if out.strip():
         print("true")
         return True
-    server_post("Miner进程丢失，请及时排查！")
+    server_post(machine_name,"Miner进程丢失，请及时排查！")
     return False
 
 # lotus进程检查
@@ -158,7 +163,7 @@ def lotusprocess_check():
     if out.strip():
         print("true")
         return True
-    server_post("Lotus进程丢失，请及时排查！")
+    server_post(machine_name,"Lotus进程丢失，请及时排查！")
     print("false")
     return False
 
@@ -171,7 +176,7 @@ def mpool_check():
         if int(out)<=240:
             print("true")
             return True
-        server_post("消息堵塞，请及时清理！") 
+        server_post(machine_name,"消息堵塞，请及时清理！") 
     return False
 
 # 存储文件挂载检查，磁盘容量剩余检查
@@ -185,11 +190,11 @@ def fm_check(check_type=''):
         print(out)
         if not out.strip():
             print("false")
-            server_post("未发现存储挂载目录，请及时排查！")
+            server_post(machine_name,"未发现存储挂载目录，请及时排查！")
             is_fm_correct = False
         if out.find('G')>=0 and int(out[0:out.find('G')])<= disk_avail_alert :
             print("false")
-            server_post("磁盘空间不足，请及时排查！")
+            server_post(machine_name,"磁盘空间不足，请及时排查！")
             is_fm_correct = False
     return is_fm_correct
 
@@ -201,21 +206,19 @@ def wdpost_log_check():
     if not out.strip():
         print("true")
         return True
-    server_post("Wdpost报错，请及时处理！")
+    server_post(machine_name,"Wdpost报错，请及时处理！")
     return False
 
 # WiningPost—Miner爆块检查
-def mined_block_check():
-    mined_block_cmd = "lotus chain list --count {0} |grep {1} |wc -l".format(int(check_interval/30), fil_account)
+def mined_block_check(chain_time):
+    mined_block_cmd = "lotus chain list --count {0} |grep {1} |wc -l".format(int(chain_time/30), fil_account)
     out = sp.getoutput(mined_block_cmd)
     print('mined_block_check:')
     print(out)
     block_count=int(out)
-    if block_count > 0:
-        print("true")
-        server_post("{0}又爆了{1}个块".format(fil_account, block_count)+"，大吉大利，今晚吃鸡")
-        return True
-    return False
+    if block_count > 0 and not daily_summary:
+        server_post(machine_name,"{0}又爆了{1}个块".format(fil_account, block_count)+"，大吉大利，今晚吃鸡")
+    return out
 
 # P1任务超时检查
 def p1_overtime_check():
@@ -230,7 +233,7 @@ def p1_overtime_check():
         print(out[0:out.find("h")])
         print("true")
         return True
-    server_post("P1封装任务超时，请及时处理！")
+    server_post(machine_name,"P1封装任务超时，请及时处理！")
     return False
 
 # P2任务超时检查
@@ -247,7 +250,7 @@ def p2_overtime_check():
             print(out[0:out.find("m")])
             print("true")
             return True
-    server_post("P2封装任务超时，请及时处理！")
+    server_post(machine_name,"P2封装任务超时，请及时处理！")
     return False
 
 # C2任务超时检查
@@ -264,7 +267,7 @@ def c2_overtime_check():
             print(out[0:out.find("m")])
             print("true")
             return True
-    server_post("C2封装任务超时，请及时处理！")
+    server_post(machine_name,"C2封装任务超时，请及时处理！")
     return False
 
 # Default钱包余额预警
@@ -277,7 +280,7 @@ def balance_check():
     if is_number(balance[0]):
         if float(balance[0])<default_wallet_balance:
             print("false")
-            server_post("钱包余额不足，请及时充值！")
+            server_post(machine_name,"钱包余额不足，请及时充值！")
             return False
     return True
 
@@ -295,7 +298,7 @@ def reachable_check():
             regex=re.compile('100% packet loss')
             if len(regex.findall(str(out))) != 0:
                 print("false")
-                server_post(str(ip)+"，服务器不可达（宕机/网络故障），请及时排查！")
+                server_post(machine_name,str(ip)+"，服务器不可达（宕机/网络故障），请及时排查！")
                 is_reachable = False 
             time.sleep(1) 
         return is_reachable
@@ -322,7 +325,7 @@ def ssh_login_ip_check():
             if ip != "" and ip not in ssh_white_ip_list:
                 curtime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
                 msg = "{0},未授权IP:{1},已登录服务器{2}".format(curtime, ip, hostname)
-                server_post(hostname+msg)
+                server_post(machine_name,hostname+msg)
         print("--------ssh logined ip check finished -------------")   
     except Exception as e:
         print(str(e))
@@ -334,9 +337,9 @@ def sectors_fault_check():
     print('sectors_fault_check:')
     print(out)
     sectors_count=int(out)
-    if sectors_count > 2:
+    if sectors_count > 2 and not daily_summary:
         print("true")
-        server_post("{0}节点出错{1}个扇区".format(fil_account, sectors_count-2)+"，请及时处理")
+        server_post(machine_name,"{0}节点出错{1}个扇区".format(fil_account, sectors_count-2)+"，请及时处理")
         return False
     return True
 
@@ -348,7 +351,7 @@ def raid_offline_check():
     if is_number(out):
         if int(out)<raid_disk_num:
             print("false")
-            server_post("阵列卡磁盘出现丢失，请及时处理！")
+            server_post(machine_name,"阵列卡磁盘出现丢失，请及时处理！")
             return False     
     return True
 
@@ -360,7 +363,7 @@ def raid_critical_check():
     if is_number(out):
         if int(out)>0:
             print("false")
-            server_post("阵列卡出现预警盘，请注意！")
+            server_post(machine_name,"阵列卡出现预警盘，请注意！")
             return False     
     return True
 
@@ -373,7 +376,7 @@ def raid_error_check():
     print(str(res))
     for array in res :
         if int(array) > 10 :
-            server_post("磁盘出现坏道，请注意！")
+            server_post(machine_name,"磁盘出现坏道，请注意！")
             return False
     return True
 
@@ -401,14 +404,47 @@ def net_check(check_type=''):
             print("true")
             continue
         print("false")
-        server_post(str+"不可达，请及时排查！")
+        server_post(machine_name, str+"不可达，请及时排查！")
         is_ip_reach = False
         time.sleep(1)
     return is_ip_reach
 
+# 每日简报汇集
+def daily_collection():
+    global collection_ip
+    global alert_log_path
+    res_string = ""
+    check_status = True
+    ips = collection_ip.split('|')
+    now = time.time()
+    time_flow = abs(int(now)-int(today_anytime_tsp(int(daily_summary_time))))
+    if (int(time_flow)<= (int(check_interval)/2)):
+        for ip in ips:
+            out = sp.getoutput("timeout 30s ssh  "+ ip + " cat " + alert_log_path + " | grep -A 1 Check | sed '$!d'")
+            if is_valid_date(out):
+                timestamp = int(time.mktime(time.strptime(out, '%a %b %d %H:%M:%S %Y')))        
+                if (int(now) - timestamp) > int(check_interval+300) :
+                    res_string = res_string + ip + "、"
+                    check_status = False
+            else :
+                check_status = False
+                res_string = res_string + ip + "、"
+        if check_status :
+            res_string = "告警脚本正常运行。"
+        else :
+            res_string = res_string + "机器告警脚本无法获取或可能出现故障，请及时查看。"
+        if sectors_fault_check():
+            res_string = res_string + "今日节点无扇区出错。"
+        else :
+            res_string = res_string + "今日节点有扇区出错，请及时处理。"
+        res_string = res_string + "今日节点爆了" + mined_block_check(86400) + "个块，大吉大利!"   
+        server_post("每日简报",res_string)
+
+
 def loop():
     while True:
         try:
+            start_time = time.time()
             global check_machine
             global fil_account
             if not check_machine.strip():
@@ -425,38 +461,34 @@ def loop():
                     if chain_check():
                         balance_check()
                         if mpool_check():
-                            print("---------------------")
-                            print(time.asctime(time.localtime(time.time())))
                             print("Lotus已巡检完毕，无异常")
             time.sleep(3)
             if check_machine.find('二')>=0:
                 if minerprocess_check() and p1_overtime_check() and p2_overtime_check() and c2_overtime_check():
-                    print("---------------------")
-                    print(time.asctime(time.localtime(time.time())))
                     print("Seal-Miner已巡检完毕，无异常") 
             time.sleep(3)  
             if check_machine.find('三')>=0:
-                mined_block_check()
+                if daily_summary : 
+                    daily_collection()
+                else :
+                    mined_block_check(int(check_interval))
                 if nvidia_check() and minerprocess_check() :
-                    print("---------------------")
-                    print(time.asctime(time.localtime(time.time())))
                     print("WiningPost-Miner已巡检完毕，无异常")   
             time.sleep(3)             
             if check_machine.find('四')>=0:
-                if nvidia_check() and minerprocess_check() and wdpost_log_check() and sectors_fault_check():
-                    print("---------------------")
-                    print(time.asctime(time.localtime(time.time())))    
+                if nvidia_check() and minerprocess_check() and wdpost_log_check() and sectors_fault_check():    
                     print("WindowPost-Miner已巡检完毕，无异常") 
             time.sleep(3)
             if check_machine.find('五')>=0:
-                if raid_offline_check() and raid_error_check() and raid_critical_check() and raid_failed_check():
-                    print("---------------------")
-                    print(time.asctime(time.localtime(time.time())))    
+                if raid_offline_check() and raid_error_check() and raid_critical_check() and raid_failed_check():   
                     print("存储机已巡检完毕，无异常") 
-            time.sleep(3)
+            print("----------Check End-----------")
+            print(time.asctime(time.localtime(time.time())))
+            end_time = time.time()
+            sleep_time = check_interval - (end_time-start_time)
             # sleep
             print("sleep {0} seconds\n".format(check_interval))
-            time.sleep(check_interval)
+            time.sleep(sleep_time)
         except KeyboardInterrupt:
             exit(0)
         except:
@@ -467,6 +499,6 @@ def main():
     loop()
 
 if __name__ == "__main__":
-    init_check()
+    #init_check()
     main()
 
