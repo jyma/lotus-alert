@@ -49,7 +49,7 @@ sudo ln -s /opt/MegaRAID/MegaCli/MegaCli64 /usr/bin/MegaCli64
 
 ### 2.2 每日简报使用
 
-正常启用每日简报需要正确填写每台机器告警日志路径，同时Wining-Miner机器需要ssh免密登录到其他告警机器。
+正常启用每日简报需要正确填写每台机器告警日志路径，确保每台告警脚本运行机器时间校准正确,同时Wining-Miner机器需要ssh免密登录到其他告警机器。
 
 ### 2.3 Server酱使用
 
