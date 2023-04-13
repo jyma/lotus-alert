@@ -17,36 +17,42 @@ from datetime import datetime,timedelta
 import requests
 
 # Server酱SendKey「必填，填写为自己的SendKey」
-send_key = "SCT42628TJaSP3AraKD0Hua6Woxiaxiede"
+send_key = "SCT42628TJaSsdsdgfga6u9evwVfft"
 # 可配置Server酱推送到企业微信中特定人或多个人「选填，具体可参考文档」
-openid = "yingtaoxiaowanzi|mje"
+openid = "yingtaoxiaowanzi|jyma"
 # 脚本运行所在的机器类型
 # lotus（一）、Seal-Miner（二）、Wining-Miner（三）、WindowPost-Miner（四）、存储机（五）
 # 现做出约定，直接填写一、二、三、四来表示对应的机器类型，可写入多个类型
 check_machine = "一二三四"
 # 机器别名，告警信息中进行展示，可以快速定位是哪台机器发出的告警信息
-machine_name = "lotus_pub"
+machine_name = "Miner_6_11"
 # 需要进行服务器宕机/网络不可达检验的内网ip，以|号分割
-server_ip = "192.168.100.5|192.168.100.6|192.168.100.99"
+server_ip = "192.168.7.11|192.168.7.12"
 # 需要进行网络不可达检验的公网ip及端口号，多个以|号分割
-net_ip = "221.10.205.199 9227"
+net_ip = "221.10.215.218 8080|115.228.39.103 22"
 # 存储挂载路径及磁盘剩余空间监测，填写需要监测的磁盘挂载目录，若为根目录挂载可以直接填写`/`，多个挂载目录使用`|`进行分隔
-file_mount = "/fcfs"
+file_mount = "/ipfsdata|/|/data1"
 # 阵列卡磁盘个数
 raid_disk_num = 36
 # 剩余磁盘空间监测，默认是单位是G，监测的目录为`file_mount`中填写的路径
-disk_avail_alert = 200
+disk_avail_alert = 150
+# 是否开启每日简报，每日简报默认运行在Wining-Miner机器上，默认每天上午12点进行推送，同时该功能需要获取其他运行告警脚本机器上的日志信息
+daily_summary = True
+# 每日简报准点发送时间，如12即每天上午12时发送
+daily_summary_time = "12"
+# 所有运行该告警脚本的机器内网ip，以|号分割，用来收集所有机器告警脚本日志中的信息
+collection_ip = "192.168.7.11|192.168.7.12"
+# 所有运行该脚本的机器的告警日志路径（建议所有机器告警日志在同一目录下）
+alert_log_path = "/home/fil/alert.log"
 # WindowPost—Miner日志路径「选填，在WindowPost-Miner上运行时需要填写」
 wdpost_log_path = "/home/fil/miner.log"
-# WiningPost-Miner日志路径「选填，在Wining-Miner上运行时需要填写」
-winingpost_log_path = "/home/fil/miner.log"
 # fil_account 为你的Miner节点号「必填，用于爆块检测」
-fil_account = "f099（黑洞）"
+fil_account = "f08866"
 # 最长时间任务告警，p1默认是小时，p2默认是分钟，c默认是分钟，「选填」
 p1_job_time_alert = 5
 p2_job_time_alert = 40
 c2_job_time_alert = 25
-# Default钱包余额告警阈值「选填，默认20」
+# Default钱包余额告警阈值「选填，默认50」
 default_wallet_balance = 20
 # check_interval 程序循环检查间隔默认300秒
 check_interval = 300
