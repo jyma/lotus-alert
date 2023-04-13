@@ -28,6 +28,8 @@
 可对服务器宕机或者网络发生故障时进行告警。
 - 阵列卡常见故障告警
 可对存储服务器使用阵列卡进行监控，对于常见故障如硬盘故障\丢失、磁盘坏道、预警盘进行监控告警，及时发现更换硬盘。
+- 每日简报
+每天对集群告警脚本进行自检，检验所有机器脚本是否在正常运行。同时开启「每日简报」功能将不再实时发送爆块、扇区出错，改为每日总结发送一次。
 - ssh登录IP地址是否授权检查
 可自定义ssh_white_ip_list，如果不在列表中的IP登录了本服务器，将发出报警消息
 
@@ -45,7 +47,11 @@ sudo alien -i MegaCli-8.07.14-1.noarch.rpm
 sudo ln -s /opt/MegaRAID/MegaCli/MegaCli64 /usr/bin/MegaCli64
 ```
 
-### 2.2 Server酱使用
+### 2.2 每日简报使用
+
+正常启用每日简报需要正确填写每台机器告警日志路径，同时Wining-Miner机器需要ssh免密登录到其他告警机器。
+
+### 2.3 Server酱使用
 
 - SendKey  
 登陆使用Server酱获取`SendKey`，详细内容可以参考[Server酱文档](https://sct.ftqq.com/forward)。
@@ -55,7 +61,7 @@ sudo ln -s /opt/MegaRAID/MegaCli/MegaCli64 /usr/bin/MegaCli64
 该参数用于配置Server酱推送到企业微信中的特定人或多个人，内容为接收人在企业微信中的 UID，填写多个人使用`|`隔开，不填则发送给通道配置页面的接收人。
 企业微信中某个成员的UID可以在该企业中的账号，直接在通讯录中查看成员即可获取该成员的「账号」（即该成员UID）
 
-### 2.3 脚本其他参数配置
+### 2.4 脚本其他参数配置
 
 - check_machine  
 告警机器类型，该参数用于标识脚本运行所在的机器类型：填写`一`为`Lotus`，`二`为`Seal-Miner`，`三`为`Wining-Miner`，`四`为`WindowPost-Miner`。当同一个台机器上运行多个功能或使用官方Miner并未进行拆分时，该参数可写入多个类型。比如当使用官方Miner时，可以设置`check_machine = "二三四"`来对该机器的封装、爆块和WindowPost进行告警。
