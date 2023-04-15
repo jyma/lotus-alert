@@ -426,7 +426,7 @@ def daily_collection():
     time_flow = abs(int(now)-int(today_anytime_tsp(int(daily_summary_time))))
     if (int(time_flow)<= (int(check_interval)/2)):
         for ip in ips:
-            out = sp.getoutput("timeout 30s ssh  "+ ip + " cat " + alert_log_path + " | grep -A 1 Check | sed '$!d'")
+            out = sp.getoutput("timeout 30s ssh  "+ ip + " cat " + alert_log_path + " | grep -a -A 1 Check | sed '$!d'")
             if is_valid_date(out):
                 timestamp = int(time.mktime(time.strptime(out, '%a %b %d %H:%M:%S %Y')))        
                 if (int(now) - timestamp) > int(check_interval+300) :
