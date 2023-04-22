@@ -41,13 +41,13 @@ daily_summary = True
 # 每日简报准点发送时间，如12即每天上午12时发送
 daily_summary_time = "12"
 # 所有运行该告警脚本的机器内网ip，以|号分割，用来收集所有机器告警脚本日志中的信息
-collection_ip = "192.168.7.11|192.168.7.12"
+collection_ip = "192.168.7.11|192.168.7.12|192.168.7.13|192.168.6.11|192.168.2.11"
 # 所有运行该脚本的机器的告警日志路径（建议所有机器告警日志在同一目录下）
-alert_log_path = "/home/fil/alert.log"
+alert_log_path = "/home/ps/alert.log"
 # WindowPost—Miner日志路径「选填，在WindowPost-Miner上运行时需要填写」
-wdpost_log_path = "/home/fil/miner.log"
+wdpost_log_path = "/home/ps/miner.log"
 # fil_account 为你的Miner节点号「必填，用于爆块检测」
-fil_account = "f08866"
+fil_account = "f01761579"
 # 最长时间任务告警，p1默认是小时，p2默认是分钟，c默认是分钟，「选填」
 p1_job_time_alert = 5
 p2_job_time_alert = 40
@@ -338,15 +338,18 @@ def ssh_login_ip_check():
 
 # 扇区证明出错检查
 def sectors_fault_check():
+    global sector_faults_num
     sectors_fault_cmd = "lotus-miner proving faults|wc -l"
     out = sp.getoutput(sectors_fault_cmd)
     print('sectors_fault_check:')
     print(out)
-    sectors_count=int(out)
-    if sectors_count > 2 and not daily_summary:
-        print("true")
-        server_post(machine_name,"{0}节点出错{1}个扇区".format(fil_account, sectors_count-2)+"，请及时处理")
+    sectors_count=int(out)-2
+    if sectors_count > 0 and sectors_count>sector_faults_num:
+        sector_faults_num = sectors_count
+        server_post(machine_name,"{0}节点出错{1}个扇区".format(fil_account, sectors_count)+"，请及时处理")
         return False
+    if sectors_count == 0 :
+        sector_faults_num = 0
     return True
 
 # 阵列卡故障盘检测
@@ -426,7 +429,7 @@ def daily_collection():
     time_flow = abs(int(now)-int(today_anytime_tsp(int(daily_summary_time))))
     if (int(time_flow)<= (int(check_interval)/2)):
         for ip in ips:
-            out = sp.getoutput("timeout 30s ssh  "+ ip + " cat " + alert_log_path + " | grep -A 1 Check | sed '$!d'")
+            out = sp.getoutput("timeout 30s ssh  "+ ip + " cat " + alert_log_path + " | grep -a -A 1 Check | sed '$!d'")
             if is_valid_date(out):
                 timestamp = int(time.mktime(time.strptime(out, '%a %b %d %H:%M:%S %Y')))        
                 if (int(now) - timestamp) > int(check_interval+300) :
@@ -448,6 +451,8 @@ def daily_collection():
 
 
 def loop():
+    global sector_faults_num
+    sector_faults_num = 0
     while True:
         try:
             start_time = time.time()
