@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 import requests
 
 # Server酱SendKey「必填，填写为自己的SendKey」
-send_key = "SCT42628TJaSsdsdgfga6u9evwVfft"
+send_key = "SCT42628TJaSsasadfasfdsfdfghevwVfft"
 # 可配置Server酱推送到企业微信中特定人或多个人「选填，具体可参考文档」
 openid = "yingtaoxiaowanzi|jyma"
 # 脚本运行所在的机器类型
