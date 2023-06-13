@@ -477,7 +477,7 @@ def raid_failed_check():
     if not out.strip():
         print("true")
         return True
-    server_post("阵列卡出现故障盘，请及时处理！")
+    server_post(machine_name, "阵列卡出现故障盘，请及时处理！")
     return False
 
 
