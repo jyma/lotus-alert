@@ -297,6 +297,14 @@ def p2_overtime_check():
             print(out[0 : out.find("m")])
             print("true")
             return True
+    else:
+        time_parts = out.split("h")
+        hours = int(time_parts[0])
+        minutes_parts = time_parts[1].split("m")
+        minutes = int(minutes_parts[0])
+        total_minutes = hours * 60 + minutes
+        if total_minutes <= p2_job_time_alert:
+            return True
     server_post(machine_name, "P2封装任务超时，请及时处理！")
     return False
 
