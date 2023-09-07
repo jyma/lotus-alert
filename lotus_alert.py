@@ -141,8 +141,6 @@ def chain_check():
 
 
 # 显卡驱动检查
-
-
 def nvidia_check():
     out = sp.getoutput("timeout 30s echo $(nvidia-smi | grep GeForce)")
     print("nvidia_check:")
@@ -155,8 +153,6 @@ def nvidia_check():
 
 
 # miner进程检查
-
-
 def minerprocess_check():
     time.sleep(5)
     out = sp.getoutput("timeout 30s echo $(pidof lotus-miner)")
@@ -170,8 +166,6 @@ def minerprocess_check():
 
 
 # lotus进程检查
-
-
 def lotusprocess_check():
     out = sp.getoutput("timeout 30s echo $(pidof lotus)")
     print("lotusprocess_check:")
@@ -185,8 +179,6 @@ def lotusprocess_check():
 
 
 # 消息堵塞检查
-
-
 def mpool_check():
     out = sp.getoutput("lotus mpool pending --local | wc -l")
     print("mpool_check:")
@@ -200,8 +192,6 @@ def mpool_check():
 
 
 # 存储文件挂载检查，磁盘容量剩余检查
-
-
 def fm_check(check_type=""):
     global file_mount
     is_fm_correct = True
@@ -227,8 +217,6 @@ def fm_check(check_type=""):
 
 
 # WindowPost—Miner日志报错检查
-
-
 def wdpost_log_check():
     out = sp.getoutput("cat " + wdpost_log_path + "| grep 'running window post failed'")
     print("wdpost_log_check:")
@@ -241,8 +229,6 @@ def wdpost_log_check():
 
 
 # WiningPost—Miner爆块检查
-
-
 def mined_block_check(chain_time):
     mined_block_cmd = "lotus chain list --count {0} |grep {1} |wc -l".format(
         int(chain_time / 30), fil_account
@@ -259,8 +245,6 @@ def mined_block_check(chain_time):
 
 
 # P1任务超时检查
-
-
 def p1_overtime_check():
     global p1_job_time_alert
     out = sp.getoutput(
@@ -280,8 +264,6 @@ def p1_overtime_check():
 
 
 # P2任务超时检查
-
-
 def p2_overtime_check():
     global p2_job_time_alert
     out = sp.getoutput(
@@ -310,8 +292,6 @@ def p2_overtime_check():
 
 
 # C2任务超时检查
-
-
 def c2_overtime_check():
     global c2_job_time_alert
     out = sp.getoutput(
@@ -332,8 +312,6 @@ def c2_overtime_check():
 
 
 # Default钱包余额预警
-
-
 def balance_check():
     global default_wallet_balance
     out = sp.getoutput("lotus wallet balance")
@@ -342,15 +320,13 @@ def balance_check():
     balance = out.split(" ")
     if is_number(balance[0]):
         if float(balance[0]) < default_wallet_balance:
-            print("false")
-            server_post(machine_name, "钱包余额不足，请及时充值！")
+            post_str = "钱包余额为:" + str(int(float(balance[0]))) + " Fil，请及时充值！"
+            print(post_str)
             return False
     return True
 
 
 # 检查内网服务器是否可达（宕机或网络不通）
-
-
 def reachable_check():
     try:
         global server_ip
@@ -375,8 +351,6 @@ def reachable_check():
 
 
 # ssh 登录IP是否授权检查
-
-
 def ssh_login_ip_check():
     try:
         global ssh_white_ip_list
@@ -405,8 +379,6 @@ def ssh_login_ip_check():
 
 
 # 扇区证明出错检查
-
-
 def sectors_fault_check():
     global sector_faults_num
     sectors_fault_cmd = "lotus-miner proving faults|wc -l"
@@ -428,8 +400,6 @@ def sectors_fault_check():
 
 
 # 阵列卡故障盘检测
-
-
 def raid_offline_check():
     out = sp.getoutput("sudo  MegaCli64 -PDList -aALL|grep -c 'Firmware state'")
     print("raid_offline_check:")
@@ -443,8 +413,6 @@ def raid_offline_check():
 
 
 # 阵列卡预警盘检测
-
-
 def raid_critical_check():
     out = sp.getoutput(
         "sudo MegaCli64 -AdpAllInfo -aALL | grep 'Critical Disks' | awk '{print $4}'"
@@ -460,8 +428,6 @@ def raid_critical_check():
 
 
 # 阵列卡磁盘坏道检测
-
-
 def raid_error_check():
     out = sp.getoutput("sudo MegaCli64 -PDList -aALL|grep Error|awk '{print $4}'")
     print("raid_error_check:")
@@ -476,8 +442,6 @@ def raid_error_check():
 
 
 # 阵列卡磁盘故障/bad检测
-
-
 def raid_failed_check():
     out = sp.getoutput("sudo  MegaCli64 -PDList -aALL|grep  state|grep -E 'Failed|bad'")
     print("raid_failed_check:")
@@ -490,8 +454,6 @@ def raid_failed_check():
 
 
 # 检查公网服务器是否可达
-
-
 def net_check(check_type=""):
     global net_ip
     is_ip_reach = True
@@ -511,8 +473,6 @@ def net_check(check_type=""):
 
 
 # 每日简报汇集
-
-
 def daily_collection():
     global collection_ip
     global alert_log_path
