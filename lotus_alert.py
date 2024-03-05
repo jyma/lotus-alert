@@ -209,10 +209,12 @@ def fm_check(check_type=""):
             print("false")
             server_post(machine_name, "未发现存储挂载目录，请及时排查！")
             is_fm_correct = False
-        if out.find("G") >= 0 and int(out[0 : out.find("G")]) <= disk_avail_alert:
-            print("false")
-            server_post(machine_name, "磁盘空间不足，请及时排查！")
-            is_fm_correct = False
+        if not (out.find("T") >= 0):
+            match = re.search(r"(\d+(\.\d+)?)", out)
+            if match and float(match.group(1)) <= disk_avail_alert:
+                print("false")
+                server_post(machine_name, "磁盘空间不足，请及时排查！")
+                is_fm_correct = False
     return is_fm_correct
 
 
@@ -239,7 +241,9 @@ def mined_block_check(chain_time):
     block_count = int(out)
     if block_count > 0 and not daily_summary:
         server_post(
-            machine_name, "{0}又爆了{1}个块".format(fil_account, block_count) + "，大吉大利，今晚吃鸡"
+            machine_name,
+            "{0}又爆了{1}个块".format(fil_account, block_count)
+            + "，大吉大利，今晚吃鸡",
         )
     return out
 
@@ -320,7 +324,9 @@ def balance_check():
     balance = out.split(" ")
     if is_number(balance[0]):
         if float(balance[0]) < default_wallet_balance:
-            post_str = "钱包余额为:" + str(int(float(balance[0]))) + " Fil，请及时充值！"
+            post_str = (
+                "钱包余额为:" + str(int(float(balance[0]))) + " Fil，请及时充值！"
+            )
             print(post_str)
             return False
     return True
@@ -342,7 +348,10 @@ def reachable_check():
             regex = re.compile("100% packet loss")
             if len(regex.findall(str(out))) != 0:
                 print("false")
-                server_post(machine_name, str(ip) + "，服务器不可达（宕机/网络故障），请及时排查！")
+                server_post(
+                    machine_name,
+                    str(ip) + "，服务器不可达（宕机/网络故障），请及时排查！",
+                )
                 is_reachable = False
             time.sleep(1)
         return is_reachable
@@ -391,7 +400,8 @@ def sectors_fault_check():
             sector_faults_num = sectors_count
             server_post(
                 machine_name,
-                "{0}节点出错{1}个扇区".format(fil_account, sectors_count) + "，请及时处理",
+                "{0}节点出错{1}个扇区".format(fil_account, sectors_count)
+                + "，请及时处理",
             )
         return False
     if sectors_count == 0:
@@ -506,7 +516,9 @@ def daily_collection():
             res_string = res_string + "今日节点无扇区出错。"
         else:
             res_string = res_string + "今日节点有扇区出错，请及时处理。"
-        res_string = res_string + "今日节点爆了" + mined_block_check(86400) + "个块，大吉大利!"
+        res_string = (
+            res_string + "今日节点爆了" + mined_block_check(86400) + "个块，大吉大利!"
+        )
         server_post("每日简报", res_string)
 
 
